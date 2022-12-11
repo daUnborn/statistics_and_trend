@@ -290,6 +290,30 @@ heatmap.set_title('Correlation Heatmap', fontdict={'fontsize':12}, pad=12)
 #save the image
 plt.savefig('heatmap')
 
+#-------------------------------descriptive statistis---------------------------------------------------------#
+
+describe_pop_years = df_pop_years.agg(
+    {
+        "Australia": ["min", "max", "median", "mean", "skew", "std", 'var'],
+        "United States": ["min", "max", "median", "mean", "skew", "std", 'var'],
+        "United Kingdom": ["min", "max", "median", "mean", "skew", "std", 'var'],
+        "Nigeria": ["min", "max", "median", "mean", "skew", "std", 'var']
+    }
+)
+
+describe_pop_countries = df_pop_countries.agg(
+    {
+        "2015": ["min", "max", "median", "mean", "skew", "std", 'var'],
+        "2017": ["min", "max", "median", "mean", "skew", "std", 'var'],
+        "2018": ["min", "max", "median", "mean", "skew", "std", 'var'],
+        "2019": ["min", "max", "median", "mean", "skew", "std", 'var'],
+        "2020": ["min", "max", "median", "mean", "skew", "std", 'var']
+    }
+)
+
+
+df_describe(describe_pop_years, 'population_by_countries.png')
+df_describe(describe_pop_countries, 'population_by_years.png')
 
 
 
