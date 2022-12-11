@@ -209,6 +209,52 @@ def df_describe(data, filename):
     #save the plot as a png file
     plt.savefig(filename)
     
+###------------------------------------Initializations------------------------------------####
+
+#attributes initiatilization
+countries = ['United States', 'Australia', 'Nigeria', 'United Kingdom']
+years = ['2015', '2017', '2018', '2019', '2020']
+
+#url/file path initialization
+pop_url = 'https://api.worldbank.org/v2/en/indicator/SP.POP.GROW?downloadformat=excel'
+arable_url = 'https://api.worldbank.org/v2/en/indicator/AG.LND.ARBL.ZS?downloadformat=excel'
+cereal_url = 'https://api.worldbank.org/v2/en/indicator/AG.YLD.CREL.KG?downloadformat=excel'
+url = 'API_19_DS2_en_csv_v2_4700503.csv'
+
+#data clean up initialization
+delete_columns = ['Country Code', 'Indicator Name', 'Indicator Code']
+rows_to_skip_excel = 3
+rows_to_skip_csv = 4
+separator=''
+filetype = 'csv'
+operation = 'mean'
+
+#visiualization initiatialization
+
+#Retrieving of population dataframe
+df_pop_countries = agg_data(countries, 'c', 'Country Name', 'Population growth (annual %)')
+df_pop_years = agg_data(years, 'y', 'Year', 'Population growth (annual %)')
+
+#Retrieving of arable land dataframe
+df_arable_countries = agg_data(countries, 'c', 'Country Name', 'Arable land (% of land area)')
+df_arable_years = agg_data(years, 'y', 'Year', 'Arable land (% of land area)')
+
+#Retrieving of cereal yield dataframe
+df_cereal_countries = agg_data(countries, 'c', 'Country Name', 'Cereal yield (kg per hectare)')
+df_cereal_years = agg_data(years, 'y', 'Year', 'Cereal yield (kg per hectare)')
+
+#for pie chart
+data = sum_data(df_pop_countries)['sum']
+label = sum_data(df_pop_countries)['Country Name']
+title = 'Aggregate Population Growth'
+
+#for the different plots - year
+x_data_year = 'Year'
+y_data_year = countries
+
+#for the different plots - countries
+x_data_country = 'Country Name'
+y_data_country = years
 
 
 
