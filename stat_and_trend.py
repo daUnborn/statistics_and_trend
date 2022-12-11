@@ -11,93 +11,208 @@ Created on Fri Dec  9 09:21:59 2022
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
+from pandas.plotting import table
 
 
 
 #Function to retrieve data from a dataset and do some clean ups
 
-def extract_data(url, filetype, skip_row, separator, del_columns):
-    """
+def extract_data(url, filetype, delete_columns, rows_to_skip, separator, indicator):
+    '''
     This fucntion is used to retrieve data into a pandas dataframe. It considers the file type
     and ensures the required data is retrieved.
 
-        Parameters:
-            a. url: Accepts a string url which is either a filepath or web url
-            b. filetype: accepts a string value. Either 'excel' or 'csv'. Any other type returns an error
-            c. skip_row: this accepts an integer value of the number of row headers to skip.
-            d. separator: this accepts a string containing the regex that separates columns on a csv file
+    Parameters
+    ----------
+    url : string
+        Accepts a string url which is either a filepath or web url.
+    filetype : string
+        accepts a string value. Either 'excel' or 'csv'. Any other type returns an error.
+    delete_columns : list
+        The columns we want to get rid of.
+    rows_to_skip : int
+        this accepts an integer value of the number of row headers to skip..
+    separator : string
+        this accepts a string containing the regex that separates columns on a csv file.
+    indicator : string
+        the indicator of interest.
 
-        Returns:
-            df_countries (pandas.core.frame.DataFrame): Pandas Dataframe of the original dataframe
-            df_year (pandas.core.frame.DataFrame): The transpose of the original dataframe
-    
-    
-    """
+    Returns
+    -------
+    df1 : pandas.core.frame.DataFrame
+        Pandas Dataframe of the original dataframe.
+    df2 : pandas.core.frame.DataFrame
+        The transpose of the original dataframe.
+
+    '''
 
     #in the bid to make the function more flexible, this conditional statement checks
     #for filetype as specified and uses it to know what method to call to retrieve the data
     if(filetype == 'excel'):
-        df = pd.read_excel(url, skiprows=skip_row)
+        df = pd.read_excel(url, skiprows=3)
     elif filetype == 'csv':
-        df = pd.read_csv(url, sep=separator)
+        df = pd.read_csv(url, skiprows=4)
+        df = df.loc[df['Indicator Name'] == indicator]
     else:
         print('Unrecognized file type')
 
-    #dropped rows that have maximum of 2 NAs
-    df.dropna(thresh=2)
+  
+    #dropping columns that are not needed. 
+    df = df.drop(delete_columns, axis=1)
 
-    #assigned the original dataframe to a new variable
-    df_countries = df
+    #this extracts a dataframe with countries as column
+    df1 = df
     
-    #drop columns that are not needed as specified
-    df = df.drop(del_columns, axis=1)
+    #this section extract a dataframe with year as columns
+    df2 = df.transpose()
+
+    #removed the original headers after a transpose and dropped the row
+    #used as a header
+    df2 = df2.rename(columns=df2.iloc[0])
+    df2 = df2.drop(index=df2.index[0], axis=0)
+    df2 = df2.reset_index()
+    df2 = df2.rename(columns={"index":"Year"})
     
-    #the second dataframe is the transpose of the original dataframe
-    df_year = df.transpose()
-    
-    #Since the index of the original became the header of the transpose
-    #the first row is used for as the header. For this assignment, we assume that the first
-    #row would always be the country name
-    df_year = df_year.rename(columns=df_year.iloc[0])
-    df_year = df_year.drop(index=df_year.index[0], axis=0)
-    df_year = df_year.reset_index()
-    df_year = df_year.rename(columns={"index":"Year"})
-    
-    #return the 2 dataframes
-    return df_countries, df_year
+    return df1, df2
 
 
 #Function to extract data of country and year of interest of interest
 
-def country_data(data, entity, column1, column2):
+def agg_data(attribute, entity, target_column, indicator):
     
     """
-    This fucntion is used to retrieve data for specific countries and years or specific years and countries
-    and puts it into a dataframe. It is a function used to extract a subset of data of interest from the
-    original dataframe
+    This function is used to retrieve aggregated data into a pandas dataframe. The sample data retrieved
+    using this function is what is used for our charts
 
         Parameters:
-            a. data: accepts a pandas dataframe. This is usually the original dataframe with all the data required
-            b. entity: accepts a list of countries or years we would want to extract data for. However, you should
-                note that if entity is a list of countries, then, the dataframe with country name as column should he used
-                else, the dataframe with years as column
-            c. column1: the desired column to be extracted
-            d. column2: the second column to be extracted
+            a. attribute: A list of values i.e. countries or years that we want to consider
+            b. entity: relates to the attribute c for countries and any other character for year
+            c. target column: the column on the main dataframe that would be a point of reference
 
         Returns:
-            df_countries (pandas.core.frame.DataFrame): Pandas Dataframe of the selected countries and years
+            df (pandas.core.frame.DataFrame): Pandas Dataframe of the aggregated data
+    
+    """
+
+    #generate the original data from file/url
+    df1, df2 = extract_data(url, filetype, delete_columns, 4, separator, indicator)
+    
+    #create a dataframe
+    df = pd.DataFrame()
+    
+    if(entity == 'c'):
+        #extract a dataframe of a list of countries
+        for country in attribute:
+            df = pd.concat([df, df1.loc[df1[target_column] == country]])
+        df = df[[target_column] + years]
+    else:
+    #extract a dataframe of a list of years
+        for year in attribute:
+            df = pd.concat([df, df2.loc[df2[target_column] == year]])
+        df = df[[target_column] + countries]
+        
+    return df
+
+
+def sum_data(dataframe):
+    
+    """
+    This function accepts 3 argument and return a new dataframe with an additional column. 
+    Additional column could be the mean, mode, median or sd of each row 
+
+        Parameters:
+            a. dataframe: The original dataframe we want to sum its data
+            b. columns_considered: this gives us the flexibility to choose the column we want to perform an operation on
+            c. the type of operation i.e. mean, sum etc
+
+        Returns:
+            dataframe (pandas.core.frame.DataFrame): Pandas Dataframe of the aggregated data
+    
     """
     
-    #extracts a dataframe of 2 columns
-    df = data[[column1, column2]]
+    dataframe['sum'] = dataframe.iloc[:, 1:].mean(axis=1)
+    return dataframe
+
+
+def plot_pie_chart(data, title, label):
     
-    #create a new dataframe to hold our results
-    dfO = pd.DataFrame(columns=[column1, column2])
+    """
+    This function plots a pie chart
+
+        Parameters:
+            a. data: The dataframe in considration
+            b. title: the title of the pie chart
+            c. Labels for the pie chart
     
-    #a for loop to iterate through the list of countries/years provided
-    for e in entity:
-        dfO = pd.concat([dfO, df.loc[df[column1] == e]])
-    return dfO
+    """
+    
+    plt.pie(data, labels=label, autopct='%1.3f%%', shadow=True, startangle=90)
+    plt.title(title, fontsize='22')
+    plt.show()
+
+
+def plot_chart(data, x_data, y_data, kind, xlabel, ylabel, title):
+    """
+    This function plots a chart based on the kind specified
+
+        Parameters:
+            a. data: The dataframe in considration
+            b. x_data: data of the x-axis
+            c. y_data: data of the y-axis
+            d. kind: the kind of chart to plot e.g. bar, line
+    
+    """
+    
+    data.plot(x_data, y_data, kind=kind)
+    plt.legend(bbox_to_anchor=(1.01, 0.02, .4, .10), loc=3, ncol=1, mode="expand", borderaxespad=0.)
+    plt.xticks(rotation='vertical')
+    plt.xlabel(xlabel, fontsize='22')
+    plt.ylabel(ylabel, fontsize='22')
+    plt.title(title, fontsize='22')
+    plt.savefig(title)
+    plt.show()
+    
+    
+
+#This function handles the descriptive statistics
+
+def df_describe(data, filename):
+    '''
+    
+
+    Parameters
+    ----------
+    data : TYPE
+        Pandas dataframe with the result of the decriptive statistics.
+    filename : String
+        filename to be used to save the descriptive statistics.
+
+    Returns
+    -------
+    None.
+
+    '''
+
+    #describe = dataframe.describe()
+
+    #create a subplot without frame
+    plot = plt.subplot(111, frame_on=False)
+
+    #remove axis
+    plot.xaxis.set_visible(False) 
+    plot.yaxis.set_visible(False) 
+
+    #create the table plot and position it in the upper left corner
+    table(plot, data,loc='upper right')
+
+    #save the plot as a png file
+    plt.savefig(filename)
+    
+
+
+
+
 
 
 
