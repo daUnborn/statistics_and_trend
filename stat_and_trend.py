@@ -256,9 +256,39 @@ y_data_year = countries
 x_data_country = 'Country Name'
 y_data_country = years
 
+#----------------------------------visualizations----------------------------------#
+plot_chart(df_pop_years, x_data_year, y_data_year, 'line', 'Years', 'Count', 'Trend of population growth by country')
+
+plot_chart(df_arable_years, x_data_year, y_data_year, 'line', 'Years', 'Count', 'Trend of arable land by country')
+
+plot_chart(df_cereal_years, x_data_year, y_data_year, 'line', 'Years', 'Count', 'Cereal yield kg per hecter by country')
+
+plot_chart(df_pop_countries, x_data_country, y_data_country, 'bar', 'Country', 'Count', 'Trend of population growth by year')
+
+plot_chart(df_arable_countries, x_data_country, y_data_country, 'bar', 'Country', 'Count', 'Trend of arable land by year')
+
+plot_chart(df_cereal_countries, x_data_country, y_data_country, 'bar', 'Country', 'Count', 'Trend of cereal yield by year')
+
+plot_pie_chart(data, title, label)
 
 
+#-------------------------------correlation and heatmaps---------------------------------------
+d = {'Population': df_pop_years['Australia'],  'Arable': df_arable_years['Australia'], 'Cereal Yield': df_cereal_years['Australia']}
+df = pd.DataFrame(data=d)
+df = df.apply(pd.to_numeric, errors='coerce')
+print(df.corr())
 
+# This increases the size of the heatmap.
+plt.figure(figsize=(12, 6))
+
+# Store heatmap object in a variable for easy accessibilityto easily access.
+heatmap = sns.heatmap(df.corr(), annot=True)
+
+# Give a title to the heatmap
+heatmap.set_title('Correlation Heatmap', fontdict={'fontsize':12}, pad=12)
+
+#save the image
+plt.savefig('heatmap')
 
 
 
