@@ -14,8 +14,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pandas.plotting import table
 
-
-
 #Function to retrieve data from a dataset and do some clean ups
 
 def extract_data(url, filetype, delete_columns, rows_to_skip, separator, indicator):
@@ -57,7 +55,6 @@ def extract_data(url, filetype, delete_columns, rows_to_skip, separator, indicat
     else:
         print('Unrecognized file type')
 
-  
     #dropping columns that are not needed. 
     df = df.drop(delete_columns, axis=1)
 
@@ -76,9 +73,7 @@ def extract_data(url, filetype, delete_columns, rows_to_skip, separator, indicat
     
     return df1, df2
 
-
 #Function to extract data of country and year of interest of interest
-
 def agg_data(attribute, entity, target_column, indicator):
     
     """
@@ -114,7 +109,6 @@ def agg_data(attribute, entity, target_column, indicator):
         
     return df
 
-
 def sum_data(dataframe):
     
     """
@@ -134,7 +128,6 @@ def sum_data(dataframe):
     dataframe['sum'] = dataframe.iloc[:, 1:].mean(axis=1)
     return dataframe
 
-
 def plot_pie_chart(data, title, label):
     
     """
@@ -147,10 +140,10 @@ def plot_pie_chart(data, title, label):
     
     """
     
-    plt.pie(data, labels=label, autopct='%1.3f%%', shadow=True, startangle=90)
+    plt.pie(data, labels=label, autopct='%1.2f%%', shadow=True, startangle=90)
     plt.title(title, fontsize='22')
+    plt.savefig(title, bbox_inches="tight")
     plt.show()
-
 
 def plot_chart(data, x_data, y_data, kind, xlabel, ylabel, title):
     """
@@ -163,24 +156,20 @@ def plot_chart(data, x_data, y_data, kind, xlabel, ylabel, title):
             d. kind: the kind of chart to plot e.g. bar, line
     
     """
-    
+    plt.figure(figsize=(12, 6))
     data.plot(x_data, y_data, kind=kind)
-    plt.legend(bbox_to_anchor=(1.01, 0.02, .4, .10), loc=3, ncol=1, mode="expand", borderaxespad=0.)
+    plt.legend(bbox_to_anchor=(1.01, 0.02, .4, .10), loc=3, ncol=1, mode="expand", borderaxespad=0., fontsize=12)
     plt.xticks(rotation='vertical')
-    plt.xlabel(xlabel, fontsize='22')
-    plt.ylabel(ylabel, fontsize='22')
-    plt.title(title, fontsize='22')
-    plt.savefig(title)
+    plt.xlabel(xlabel, fontsize='18')
+    plt.ylabel(ylabel, fontsize='18')
+    plt.title(title, fontsize='18')
+    plt.tick_params(axis='both', labelsize=18)
+    plt.savefig(title+'.png', bbox_inches="tight")
     plt.show()
     
-    
-
 #This function handles the descriptive statistics
-
 def df_describe(data, filename):
     '''
-    
-
     Parameters
     ----------
     data : TYPE
@@ -202,18 +191,50 @@ def df_describe(data, filename):
     #remove axis
     plot.xaxis.set_visible(False) 
     plot.yaxis.set_visible(False) 
-
+    
     #create the table plot and position it in the upper left corner
     table(plot, data,loc='upper right')
 
     #save the plot as a png file
     plt.savefig(filename)
     
+def heat_maps(heatmap_country):
+    '''
+    
+    Parameters
+    ----------
+    heatmap_country : string
+        name of the country to be used for heat map.
+
+    Returns
+    -------
+    None.
+
+    '''
+    
+    d = {'Population': df_pop_years[heatmap_country],  'Arable': df_arable_years[heatmap_country], 'Cereal Yield': df_cereal_years[heatmap_country]}
+    df = pd.DataFrame(data=d)
+    df = df.apply(pd.to_numeric, errors='coerce')
+    
+    # This increases the size of the heatmap.
+    plt.figure(figsize=(10, 6))
+    
+    #render the heatmap
+    sns.heatmap(df.corr(), annot=True, fmt='.5g')
+
+    # Give a title to the heatmap
+    plt.title('Correlation heatmap '+heatmap_country, fontsize=18, pad=(24))
+
+    #save the image
+    plt.savefig('Correlation_'+heatmap_country+'.png')
+
+    plt.show()
+    
 ###------------------------------------Initializations------------------------------------####
 
 #attributes initiatilization
-countries = ['United States', 'Australia', 'Nigeria', 'United Kingdom']
-years = ['2015', '2017', '2018', '2019', '2020']
+countries = ['United States', 'Australia', 'Nigeria', 'United Kingdom', 'Malaysia']
+years = ['2015', '2016','2017', '2018', '2019', '2020']
 
 #url/file path initialization
 pop_url = 'https://api.worldbank.org/v2/en/indicator/SP.POP.GROW?downloadformat=excel'
@@ -257,38 +278,26 @@ x_data_country = 'Country Name'
 y_data_country = years
 
 #----------------------------------visualizations----------------------------------#
-plot_chart(df_pop_years, x_data_year, y_data_year, 'line', 'Years', 'Count', 'Trend of population growth by country')
+plot_chart(df_pop_years, x_data_year, y_data_year, 'line', 'Years', 'annual % growth', 'Population growth (%) by country')
 
-plot_chart(df_arable_years, x_data_year, y_data_year, 'line', 'Years', 'Count', 'Trend of arable land by country')
+plot_chart(df_arable_years, x_data_year, y_data_year, 'line', 'Years', '% of land area', '% arable land area by country')
 
-plot_chart(df_cereal_years, x_data_year, y_data_year, 'line', 'Years', 'Count', 'Cereal yield kg per hecter by country')
+plot_chart(df_cereal_years, x_data_year, y_data_year, 'line', 'Years', 'kg per hectare', 'Cereal yield kg per hectare by country')
 
-plot_chart(df_pop_countries, x_data_country, y_data_country, 'bar', 'Country', 'Count', 'Trend of population growth by year')
+plot_chart(df_pop_countries, x_data_country, y_data_country, 'bar', 'Country', 'annual %', 'Population growth (%) by year')
 
-plot_chart(df_arable_countries, x_data_country, y_data_country, 'bar', 'Country', 'Count', 'Trend of arable land by year')
+plot_chart(df_arable_countries, x_data_country, y_data_country, 'bar', 'Country', '% of land area', '% arable land area by year')
 
-plot_chart(df_cereal_countries, x_data_country, y_data_country, 'bar', 'Country', 'Count', 'Trend of cereal yield by year')
+plot_chart(df_cereal_countries, x_data_country, y_data_country, 'bar', 'Country', 'kg per hectare', 'Cereal yield kg per hectare by year')
 
 plot_pie_chart(data, title, label)
 
-
 #-------------------------------correlation and heatmaps---------------------------------------
-d = {'Population': df_pop_years['Australia'],  'Arable': df_arable_years['Australia'], 'Cereal Yield': df_cereal_years['Australia']}
-df = pd.DataFrame(data=d)
-df = df.apply(pd.to_numeric, errors='coerce')
-print(df.corr())
 
-# This increases the size of the heatmap.
-plt.figure(figsize=(12, 6))
+heat_maps('Australia')
 
-# Store heatmap object in a variable for easy accessibilityto easily access.
-heatmap = sns.heatmap(df.corr(), annot=True)
+heat_maps('United States')
 
-# Give a title to the heatmap
-heatmap.set_title('Correlation Heatmap', fontdict={'fontsize':12}, pad=12)
-
-#save the image
-plt.savefig('heatmap')
 
 #-------------------------------descriptive statistis---------------------------------------------------------#
 
@@ -311,11 +320,5 @@ describe_pop_countries = df_pop_countries.agg(
     }
 )
 
-
 df_describe(describe_pop_years, 'population_by_countries.png')
 df_describe(describe_pop_countries, 'population_by_years.png')
-
-
-
-
-
